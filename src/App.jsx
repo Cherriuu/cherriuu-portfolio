@@ -1,13 +1,5 @@
-import React, { useRef, useState } from "react";
-import {
-  Github,
-  Linkedin,
-  Mail,
-  ArrowUpRight,
-  Play,
-  Pause,
-  Music2,
-} from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
+import { Github, Linkedin, Mail, ArrowUpRight, Play, Pause, Music2 } from "lucide-react";
 
 const tech = [
   ["Py", "Python"],
@@ -47,13 +39,7 @@ const projects = [
       "An inventory and production system connecting front-of-house orders with back-of-house batches. Tracks preparing, ready, and expired ingredients, and uses recent demand, available stock, and incoming batches to recommend what staff should make next.",
     highlight:
       "An append-only inventory ledger, first-expired-first-out batch consumption, and transactional row locking preserve stock history and prevent concurrent overselling.",
-    tags: [
-      "React",
-      "TypeScript",
-      "Django REST",
-      "PostgreSQL",
-      "Tailwind CSS",
-    ],
+    tags: ["React", "TypeScript", "Django REST", "PostgreSQL", "Tailwind CSS"],
     href: "https://github.com/Cherriuu/bubbleflow-v2",
   },
   {
@@ -80,104 +66,84 @@ const snowflakes = Array.from({ length: 85 }, (_, i) => ({
 function MusicPlayer() {
   const audioRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [volume, setVolume] = useState(0.2);
-  const [error, setError] = useState("");
-  const [isStarting, setIsStarting] = useState(false);
+  const [autoplayBlocked, setAutoplayBlocked] = useState(false);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return undefined;
+
+    audio.volume = 0.18;
+
+    async function startMusic() {
+      try {
+        await audio.play();
+        setAutoplayBlocked(false);
+      } catch {
+        setAutoplayBlocked(true);
+      }
+    }
+
+    function unlockMusic() {
+      if (audio.paused) startMusic();
+    }
+
+    startMusic();
+    window.addEventListener("pointerdown", unlockMusic, { once: true });
+    window.addEventListener("keydown", unlockMusic, { once: true });
+
+    return () => {
+      window.removeEventListener("pointerdown", unlockMusic);
+      window.removeEventListener("keydown", unlockMusic);
+    };
+  }, []);
 
   async function toggleMusic() {
     const audio = audioRef.current;
-    if (!audio || isStarting) return;
-
-    setError("");
+    if (!audio) return;
 
     if (!audio.paused) {
       audio.pause();
       return;
     }
 
-    setIsStarting(true);
-    audio.volume = volume;
-
     try {
       await audio.play();
+      setAutoplayBlocked(false);
     } catch {
-      setError("Music couldn't play. Please try again.");
-    } finally {
-      setIsStarting(false);
-    }
-  }
-
-  function changeVolume(event) {
-    const nextVolume = Number(event.target.value);
-    setVolume(nextVolume);
-
-    if (audioRef.current) {
-      audioRef.current.volume = nextVolume;
+      setAutoplayBlocked(true);
     }
   }
 
   return (
-    <aside className="music-player" aria-label="Background music">
+    <div className="topbar-music">
       <audio
         ref={audioRef}
-        src={`${import.meta.env.BASE_URL}music/snowlight.mp3`}
-        preload="none"
+        src={`${import.meta.env.BASE_URL}music/christmas-wishes.mp3`}
+        preload="auto"
+        autoPlay
         loop
         onPlay={() => setIsPlaying(true)}
         onPause={() => setIsPlaying(false)}
-        onError={() => {
-          setIsPlaying(false);
-          setError("Music couldn't load. Please try again.");
-        }}
       />
-
-      <div className="music-controls">
-        <button
-          type="button"
-          className="music-toggle"
-          onClick={toggleMusic}
-          disabled={isStarting}
-          aria-pressed={isPlaying}
-          aria-label={
-            isPlaying ? "Pause background music" : "Play background music"
-          }
-        >
-          {isPlaying ? (
-            <Pause size={16} aria-hidden="true" />
-          ) : (
-            <Play size={16} aria-hidden="true" />
-          )}
-
-          <span>
-            {isStarting
-              ? "Loading…"
-              : isPlaying
-                ? "Pause music"
-                : "Soft music"}
+      <button
+        type="button"
+        className={`music-toggle ${isPlaying ? "is-playing" : ""}`}
+        onClick={toggleMusic}
+        aria-pressed={isPlaying}
+        aria-label={isPlaying ? "Pause Christmas music" : "Play Christmas music"}
+      >
+        <span className="music-icon" aria-hidden="true">
+          {isPlaying ? <Pause size={14} /> : <Play size={14} />}
+        </span>
+        <span className="music-label">
+          <span className="music-title">Christmas wishes</span>
+          <span className="music-state">
+            {isPlaying ? "playing softly" : autoplayBlocked ? "tap to begin" : "paused"}
           </span>
-        </button>
-
-        <Music2 size={14} aria-hidden="true" />
-
-        <label className="sr-only" htmlFor="music-volume">
-          Music volume
-        </label>
-
-        <input
-          id="music-volume"
-          type="range"
-          min="0"
-          max="1"
-          step="0.01"
-          value={volume}
-          onChange={changeVolume}
-        />
-      </div>
-
-      <p className="music-error" role="status">
-        {error}
-      </p>
-    </aside>
+        </span>
+        <Music2 className="music-note" size={15} aria-hidden="true" />
+      </button>
+    </div>
   );
 }
 
@@ -213,29 +179,21 @@ function App() {
           <a href="#home">Home</a>
           <a href="#about">About me</a>
           <a href="#projects">Projects</a>
-          <a href="/resume_2026.pdf" target="_blank" rel="noreferrer">
-            Resume
-          </a>
+          <a href="/resume_2026.pdf" target="_blank" rel="noreferrer">Resume</a>
           <span className="nav-emote">( ˶ˆᗜˆ˵ )</span>
         </nav>
+        <MusicPlayer />
       </header>
 
       <main>
         <section className="hero section" id="home">
           <div className="hero-copy">
             <p className="eyebrow">HI, I'M °˖✧◝(⁰▿⁰)◜✧˖°</p>
-
-            <h1>
-              Jesica
-              <br />
-              Bermudes
-            </h1>
-
+            <h1>Jesica<br />Bermudes</h1>
             <div className="hero-actions">
               <a className="button primary" href="#projects">
                 View My Work <ArrowUpRight size={17} />
               </a>
-
               <a
                 className="button secondary"
                 href="mailto:Jesica.bermudes11@gmail.com"
@@ -256,33 +214,29 @@ function App() {
 
         <section className="section divider" id="about">
           <div className="section-copy narrow">
-            <h2>
-              About me <span>°˖⋆♡</span>
-            </h2>
+            <h2>About me <span>°˖⋆♡</span></h2>
 
-            <p>
-              I’m a Computer Science student at the University of Central
-              Florida graduating in May 2027. I enjoy building useful software
-              with thoughtful interfaces and reliable systems behind them.
+              <p>
+              I’m a Computer Science student at the University of Central Florida
+              graduating in May 2027. I enjoy building useful software with thoughtful
+              interfaces and reliable systems behind them.
             </p>
 
             <p>
-              I’m especially interested in full-stack development, backend
-              architecture, and the decisions that make software work under
-              real constraints. My projects explore resource scheduling,
-              inventory consistency, and demand forecasting. BubbleFlow was
-              inspired by my experience as a boba shop shift lead. When I’m
-              not coding, I’m probably out getting my next cup of matcha or
-              looking for the next thing to learn about ( ˶ᵔ ᵕ ᵔ˶ )
+              I’m especially interested in full-stack development, backend architecture,
+              and the decisions that make software work under real constraints. My
+              projects explore resource scheduling, inventory consistency, and
+              demand forecasting. BubbleFlow was inspired by my experience as a
+              boba shop shift lead. When I’m not coding, I’m
+              probably out getting my next cup of matcha or looking for the next
+              thing to learn about ( ˶ᵔ ᵕ ᵔ˶ )
             </p>
           </div>
         </section>
 
         <section className="section divider">
           <div className="section-heading-row">
-            <h2>
-              Tech Stack <span>⌁°｡⋆୨୧</span>
-            </h2>
+            <h2>Tech Stack <span>⌁°｡⋆୨୧</span></h2>
             <span className="tiny-note">Tools I use and love →</span>
           </div>
 
@@ -298,16 +252,8 @@ function App() {
 
         <section className="section divider" id="projects">
           <div className="section-heading-row">
-            <h2>
-              Projects <span>°｡♡</span>
-            </h2>
-
-            <a
-              className="tiny-note linkish"
-              href="https://github.com/Cherriuu"
-              target="_blank"
-              rel="noreferrer"
-            >
+            <h2>Projects <span>°｡♡</span></h2>
+            <a className="tiny-note linkish" href="https://github.com/Cherriuu" target="_blank" rel="noreferrer">
               View all projects →
             </a>
           </div>
@@ -317,18 +263,14 @@ function App() {
               <article className="project-card" key={project.title}>
                 <div className="project-topline">
                   <h3>{project.title}</h3>
+                  {project.status && <span className="status">{project.status}</span>}
                 </div>
-
                 <p>{project.description}</p>
                 <p className="project-highlight">{project.highlight}</p>
-
                 <div className="project-footer">
                   <div className="tags">
-                    {project.tags.map((tag) => (
-                      <span key={tag}>{tag}</span>
-                    ))}
+                    {project.tags.map((tag) => <span key={tag}>{tag}</span>)}
                   </div>
-
                   <a
                     className="project-link"
                     href={project.href}
@@ -348,12 +290,8 @@ function App() {
 
       <footer className="footer">
         <div>
-          <div className="footer-brand">
-            Jesica Bermudes <span>°˖⋆ ( ˶ˆᗜˆ˵ )</span>
-          </div>
-          <div className="copyright">
-            © {new Date().getFullYear()}. All rights reserved.
-          </div>
+          <div className="footer-brand">Jesica Bermudes <span>°˖⋆ ( ˶ˆᗜˆ˵ )</span></div>
+          <div className="copyright">© {new Date().getFullYear()}. All rights reserved.</div>
         </div>
 
         <nav className="footer-nav">
@@ -364,36 +302,23 @@ function App() {
         </nav>
 
         <div className="socials">
-          <a
-            href="https://github.com/Cherriuu"
-            target="_blank"
-            rel="noreferrer"
-            aria-label="GitHub"
-          >
+          <a href="https://github.com/Cherriuu" target="_blank" rel="noreferrer" aria-label="GitHub">
             <Github size={22} />
           </a>
-
           <a
-            href="https://www.linkedin.com/in/jesica-bermudes/"
-            target="_blank"
-            rel="noreferrer"
-            aria-label="LinkedIn"
-          >
-            <Linkedin size={22} />
+          href="https://www.linkedin.com/in/jesica-bermudes/"
+          target="_blank"
+          rel="noreferrer"
+          aria-label="LinkedIn"
+        >
+          <Linkedin size={22} />
+        </a>
+          <a href="mailto:Jesica.bermudes11@gmail.com" aria-label="Email">
+          <Mail size={22} />
           </a>
-
-          <a
-            href="mailto:Jesica.bermudes11@gmail.com"
-            aria-label="Email"
-          >
-            <Mail size={22} />
-          </a>
-
           <span className="footer-snowflake">❄</span>
         </div>
       </footer>
-
-      <MusicPlayer />
     </div>
   );
 }
