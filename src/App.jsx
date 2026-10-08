@@ -179,7 +179,7 @@ function App() {
           <a href="#home">Home</a>
           <a href="#about">About me</a>
           <a href="#projects">Projects</a>
-          <a href="/resume_2026.pdf" target="_blank" rel="noreferrer">Resume</a>
+          <a href="/Bermudes_Jesica_Resume.pdf" target="_blank" rel="noreferrer">Resume</a>
           <span className="nav-emote">( ˶ˆᗜˆ˵ )</span>
         </nav>
         <MusicPlayer />
